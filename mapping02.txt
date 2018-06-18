@@ -5,7 +5,7 @@ from urllib3.exceptions import DependencyWarning
 from elasticsearch import Elasticsearch, helpers
 
 
-es = Elasticsearch([{'host': '108.81.172.223', 'port': 92}])
+es = Elasticsearch([{'host': 'localhost', 'port': 92}])
 FILE_PATH = "D:\\Log\\testq.csv"
 INDEX = "test1"
 DOC_TYPE = "test1"
