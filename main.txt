@@ -1,0 +1,234 @@
+import pandas as pd
+import re
+
+
+data_file_list = ['INVT-180607-1718ip.1.txt', 'INVT-180607-1718ip.1.txt']
+data_file_2 = 'resutl_txt.csv'
+
+# all patterns
+pattern_ip = re.compile('^##START:\s+([\d.]+)')
+pattern_fan0 = re.compile('FAN_0 : RPM\[\s+(\d+)')
+pattern_fan1 = re.compile('FAN_1 : RPM\[\s+(\d+)')
+pattern_fan2 = re.compile('FAN_2 : RPM\[\s+(\d+)')
+pattern_fan3 = re.compile('FAN_3 : RPM\[\s+(\d+)')
+pattern_internal_cur_2a = re.compile('INTERNAL \[0x2a\] => Cur:(\d+)')
+pattern_external_cur_2a = re.compile('EXTERNAL \[0x2a\] => Cur:(\d+)')
+pattern_internal_cur_2b = re.compile('INTERNAL \[0x2b\] => Cur:(\d+)')
+pattern_external_cur_2b = re.compile('EXTERNAL \[0x2b\] => Cur:(\d+)')
+pattern_internal_cur_4d = re.compile('INTERNAL \[0x4d\] => Cur:(\d+)')
+pattern_external_cur_4d = re.compile('EXTERNAL \[0x4d\] => Cur:(\d+)')
+pattern_internal_cur_4e = re.compile('INTERNAL \[0x4e\] => Cur:(\d+)')
+pattern_external_cur_4e = re.compile('EXTERNAL \[0x4e\] => Cur:(\d+)')
+pattern_48v = re.compile('48V\s+Input Current\s+:\s([\d.]+) A.*\s+Input Voltage\s+:\s([\d.]+) V.*\s+Power Dissipation\s+:\s([\d.]+)')
+pattern_isl6398_0 = re.compile('ISL6398 #0\s+Output Current\s+:\s+([\d.]+)\s+.*\s+Output Voltage\s+:\s+([\d.]+)\s+.*\s+Power Dissipation\s+:\s+([\d.]+)')
+pattern_isl6398_1 = re.compile('ISL6398 #1\s+Output Current\s+:\s+([\d.]+)\s+.*\s+Output Voltage\s+:\s+([\d.]+)\s+.*\s+Power Dissipation\s+:\s+([\d.]+)')
+pattern_isl6398_2 = re.compile('ISL6398 #2\s+Output Current\s+:\s+([\d.]+)\s+.*\s+Output Voltage\s+:\s+([\d.]+)\s+.*\s+Power Dissipation\s+:\s+([\d.]+)')
+
+
+def find_pattern(pattern, data, index):
+    result = pattern.search(data)
+    if result:
+        return result.group(index)
+    else:
+        return '#N/A'
+
+
+def filter_data(data):
+    data_list = []
+    ump_data, s1bd_data, s2bd_data, s3bd_data = re.split('--- S\dBD ping statistics ---', data)
+    data_list.append(find_pattern(pattern_ip, data, 1))
+    data_list.append(find_pattern(pattern_fan0, ump_data, 1))
+    data_list.append(find_pattern(pattern_fan1, ump_data, 1))
+    data_list.append(find_pattern(pattern_fan2, ump_data, 1))
+    data_list.append(find_pattern(pattern_fan3, ump_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_2a, ump_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2a, ump_data, 1))
+    data_list.append(find_pattern(pattern_48v, ump_data, 1))
+    data_list.append(find_pattern(pattern_48v, ump_data, 2))
+    data_list.append(find_pattern(pattern_48v, ump_data, 3))
+    # S2BD DATA
+    data_list.append(find_pattern(pattern_internal_cur_2a, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2a, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_2b, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2b, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_4d, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_4d, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_4e, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_4e, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_0, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_0, s1bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_0, s1bd_data, 3))
+    data_list.append(find_pattern(pattern_isl6398_1, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_1, s1bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_1, s1bd_data, 3))
+    data_list.append(find_pattern(pattern_isl6398_2, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_2, s1bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_2, s1bd_data, 3))
+    data_list.append(find_pattern(pattern_48v, s1bd_data, 1))
+    data_list.append(find_pattern(pattern_48v, s1bd_data, 2))
+    data_list.append(find_pattern(pattern_48v, s1bd_data, 3))
+    # S2BD DATA
+    data_list.append(find_pattern(pattern_internal_cur_2a, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2a, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_2b, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2b, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_4d, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_4d, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_4e, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_4e, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_0, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_0, s2bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_0, s2bd_data, 3))
+    data_list.append(find_pattern(pattern_isl6398_1, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_1, s2bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_1, s2bd_data, 3))
+    data_list.append(find_pattern(pattern_isl6398_2, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_2, s2bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_2, s2bd_data, 3))
+    data_list.append(find_pattern(pattern_48v, s2bd_data, 1))
+    data_list.append(find_pattern(pattern_48v, s2bd_data, 2))
+    data_list.append(find_pattern(pattern_48v, s2bd_data, 3))
+    # S3BD DATA
+    data_list.append(find_pattern(pattern_internal_cur_2a, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2a, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_2b, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_2b, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_4d, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_4d, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_internal_cur_4e, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_external_cur_4e, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_0, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_0, s3bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_0, s3bd_data, 3))
+    data_list.append(find_pattern(pattern_isl6398_1, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_1, s3bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_1, s3bd_data, 3))
+    data_list.append(find_pattern(pattern_isl6398_2, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_isl6398_2, s3bd_data, 2))
+    data_list.append(find_pattern(pattern_isl6398_2, s3bd_data, 3))
+    data_list.append(find_pattern(pattern_48v, s3bd_data, 1))
+    data_list.append(find_pattern(pattern_48v, s3bd_data, 2))
+    data_list.append(find_pattern(pattern_48v, s3bd_data, 3))
+
+    return data_list
+
+
+first_header = ['Host Info'] * 6
+first_header += ['UMP'] * 9
+first_header += ['S1BD'] * 20
+first_header += ['S2BD'] * 20
+first_header += ['S3BD'] * 20
+
+second_header = ['Host Info'] * 6
+second_header += ['fan_test 7'] * 4
+second_header += ['temp_test'] * 2
+second_header += ['ltc4151_test'] * 3
+second_header += ['temp_test'] * 8
+second_header += ['voltage_test'] * 9
+second_header += ['ltc4151_test'] * 3
+second_header += ['temp_test'] * 8
+second_header += ['voltage_test'] * 9
+second_header += ['ltc4151_test'] * 3
+second_header += ['temp_test'] * 8
+second_header += ['voltage_test'] * 9
+second_header += ['ltc4151_test'] * 3
+
+third_header = [
+    'IP ADDR',
+    'FAN0 RPM',
+    'FAN1 RPM',
+    'FAN2 RPM',
+    'FAN3 RPM',
+    'INTERNAL Cur [0x2a]',
+    'EXTERNAL Cur [0x2a]',
+    '48V Input Current',
+    '48V Input Voltage',
+    '48V Power Dissipation',
+    'INTERNAL Cur [0x2a]',
+    'EXTERNAL Cur [0x2a]',
+    'INTERNAL Cur [0x2b]',
+    'EXTERNAL Cur [0x2b]',
+    'INTERNAL Cur [0x4d]',
+    'EXTERNAL Cur [0x4d]',
+    'INTERNAL Cur [0x4e]',
+    'EXTERNAL Cur [0x4e]',
+    'ISL6398 #0 Output Current',
+    'ISL6398 #0 Output Voltage',
+    'ISL6398 #0 Power Dissipation',
+    'ISL6398 #1 Output Current',
+    'ISL6398 #1 Output Voltage',
+    'ISL6398 #1 Power Dissipation',
+    'ISL6398 #2 Output Current',
+    'ISL6398 #2 Output Voltage',
+    'ISL6398 #2 Power Dissipation',
+    '48V Input Current',
+    '48V Input Voltage',
+    '48V Power Dissipation',
+    'INTERNAL Cur [0x2a]',
+    'EXTERNAL Cur [0x2a]',
+    'INTERNAL Cur [0x2b]',
+    'EXTERNAL Cur [0x2b]',
+    'INTERNAL Cur [0x4d]',
+    'EXTERNAL Cur [0x4d]',
+    'INTERNAL Cur [0x4e]',
+    'EXTERNAL Cur [0x4e]',
+    'ISL6398 #0 Output Current',
+    'ISL6398 #0 Output Voltage',
+    'ISL6398 #0 Power Dissipation',
+    'ISL6398 #1 Output Current',
+    'ISL6398 #1 Output Voltage',
+    'ISL6398 #1 Power Dissipation',
+    'ISL6398 #2 Output Current',
+    'ISL6398 #2 Output Voltage',
+    'ISL6398 #2 Power Dissipation',
+    '48V Input Current',
+    '48V Input Voltage',
+    '48V Power Dissipation',
+    'INTERNAL Cur [0x2a]',
+    'EXTERNAL Cur [0x2a]',
+    'INTERNAL Cur [0x2b]',
+    'EXTERNAL Cur [0x2b]',
+    'INTERNAL Cur [0x4d]',
+    'EXTERNAL Cur [0x4d]',
+    'INTERNAL Cur [0x4e]',
+    'EXTERNAL Cur [0x4e]',
+    'ISL6398 #0 Output Current',
+    'ISL6398 #0 Output Voltage',
+    'ISL6398 #0 Power Dissipation',
+    'ISL6398 #1 Output Current',
+    'ISL6398 #1 Output Voltage',
+    'ISL6398 #1 Power Dissipation',
+    'ISL6398 #2 Output Current',
+    'ISL6398 #2 Output Voltage',
+    'ISL6398 #2 Power Dissipation',
+    '48V Input Current',
+    '48V Input Voltage',
+    '48V Power Dissipation',
+]
+
+log_data_list = []
+
+for file in data_file_list:
+    with open(file) as f:
+        log_data_list += f.read().split('##START')[1:]
+
+log_data_list = ['##START' + data for data in log_data_list]
+
+for data in log_data_list:
+    print(data.splitlines()[0])
+
+records_list = []
+
+for data in log_data_list:
+    records_list.append(filter_data(data))
+
+
+df = pd.DataFrame.from_records(records_list, columns=third_header)
+df2 = pd.read_csv(data_file_2)
+df2 = df2.drop('TTL RESULT', axis=1)
+df3 = df.merge(df2, on='IP ADDR', how='left')
+col = pd.MultiIndex.from_arrays([first_header, second_header, df3.columns])
+df3.columns = col
+writer = pd.ExcelWriter('fan_speed.xlsx', engine='xlsxwriter')
+df3.to_excel(writer, sheet_name='Data')
+writer.save()
