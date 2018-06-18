@@ -1,0 +1,340 @@
+import requests, sys, time, csv
+import json
+import pandas as pd
+from urllib3.exceptions import DependencyWarning
+from elasticsearch import Elasticsearch, helpers
+
+
+es = Elasticsearch([{'host': '108.81.172.223', 'port': 92}])
+FILE_PATH = "D:\\Log\\testq.csv"
+INDEX = "test1"
+DOC_TYPE = "test1"
+HEADER_INDEX = 0
+
+df = pd.read_csv(FILE_PATH, header=HEADER_INDEX, low_memory=False)
+
+df["Cell Id"] = df["Cell Id"].replace("-","-1")
+df["Cell Id"] = df["Cell Id"].astype(int)
+df["HOUR"] = df["HOUR"].replace("-","-1")
+df["HOUR"] = df["HOUR"].astype(int)
+df["DATE"] = df["DATE"].astype(str)
+#df["DATE"] = df["DATE"].astype(str)+" "+df["HOUR"].astype(str) +":00:00"
+#df["DATE"] = df["DATE"].replace("-1:00:00","")
+df["DATE"] = pd.to_datetime(df["DATE"])
+
+settings = {
+   "mappings": {
+      "data": {
+        "properties": {
+          "AirMacDLByte": {            "type": "long"          },
+          "AirMacDLByteCnt": {            "type": "long"          },
+          "AirMacDLTti": {            "type": "long"          },
+          "AirMacULByte": {            "type": "long"          },
+          "AirMacULByteCnt": {            "type": "long"          },
+          "AirMacULTti": {            "type": "long"          },
+          "BAND": {            "type": "keyword"          },
+          "Cell Id": {            "type": "long"          },
+          "CellAvailPmPeriodTime": {            "type": "long"          },
+          "CellUnavailableTimeDown": {            "type": "long"          },
+          "CellUnavailableTimeLock": {            "type": "long"          },
+          "ConnEstabAtt": {            "type": "long"          },
+          "ConnEstabSucc": {            "type": "long"          },
+          "ConnNoCnt": {            "type": "long"          },
+          "ConnNoTot": {            "type": "long"          },
+          "DATE": {            "type": "date"          },
+          "DLTransmissionNackedRetrans": {            "type": "long"          },
+          "DLTransmissionRetrans0": {            "type": "long"          },
+          "E-RAB_Drop_Att_NoneGBR": {            "type": "long"          },
+          "E-RAB_Drop_Att_QCI1": {            "type": "long"          },
+          "E-RAB_Drop_Att_QCI2": {            "type": "long"          },
+          "E-RAB_Drop_Att_QCI5": {            "type": "long"          },
+          "E-RAB_Drop_Att_for_GBR": {            "type": "long"          },
+          "ENB ID": {            "type": "long"          },
+          "ENB TYPE": {            "type": "keyword"          },
+          "ERAB_Setup_Att_GBR": {            "type": "long"          },
+          "ERAB_Setup_Att_NoneGBR": {            "type": "long"          },
+          "ERAB_Setup_Att_QCI1": {
+            "type": "long"
+          },
+          "ERAB_Setup_Att_QCI2": {
+            "type": "long"
+          },
+          "ERAB_Setup_Att_QCI5": {
+            "type": "long"
+          },
+          "ERAB_Setup_Succ_GBR": {
+            "type": "long"
+          },
+          "ERAB_Setup_Succ_NoneGBR": {
+            "type": "long"
+          },
+          "ERAB_Setup_Succ_QCI1": {
+            "type": "long"
+          },
+          "ERAB_Setup_Succ_QCI2": {
+            "type": "long"
+          },
+          "ERAB_Setup_Succ_QCI5": {
+            "type": "long"
+          },
+          "EstabInitAttNbr": {
+            "type": "long"
+          },
+          "EstabInitSuccNbr": {
+            "type": "long"
+          },
+          "HOUR": {
+            "type": "long"
+          },
+          "Handover_Att": {
+            "type": "long"
+          },
+          "Handover_Succ": {
+            "type": "long"
+          },
+          "LSM": {
+            "type": "keyword"
+          },
+          "PdcpPduDropRateDLCnt_QCI1-9": {
+            "type": "long"
+          },
+          "PdcpPduDropRateDLTot_QCI1-9": {
+            "type": "long"
+          },
+          "PdcpPduDropRateDL_QCI1-9": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI1": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI2": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI3": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI4": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI5": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI6_8_9": {
+            "type": "long"
+          },
+          "PdcpSduDelayCnt_QCI7": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI1": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI2": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI3": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI4": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI5": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI6_8_9": {
+            "type": "long"
+          },
+          "PdcpSduDelayTot_QCI7": {
+            "type": "long"
+          },
+          "PdcpSduDropRateDLCnt_QCI1-9": {
+            "type": "long"
+          },
+          "PdcpSduDropRateDLTot_QCI1-9": {
+            "type": "long"
+          },
+          "PdcpSduDropRateDL_QCI1-9": {
+            "type": "long"
+          },
+          "PdcpSduLossRateUL_QCI1": {
+            "type": "float"
+          },
+          "PdcpSduLossRateUL_QCI9": {
+            "type": "float"
+          },
+          "PdcpSduLossULNum_QCI1": {
+            "type": "long"
+          },
+          "PdcpSduLossULNum_QCI9": {
+            "type": "long"
+          },
+          "PdcpSduTotalULNum_QCI1": {
+            "type": "long"
+          },
+          "PdcpSduTotalULNum_QCI9": {
+            "type": "long"
+          },
+          "RRC_Drop_Att": {
+            "type": "long"
+          },
+          "RRC_Drop_Tot": {
+            "type": "long"
+          },
+          "RelActive_NoneGBR": {
+            "type": "long"
+          },
+          "RelActive_QCI1": {
+            "type": "long"
+          },
+          "RelActive_QCI2": {
+            "type": "long"
+          },
+          "RelActive_QCI5": {
+            "type": "long"
+          },
+          "RelActive_for_GBR": {
+            "type": "long"
+          },
+          "S1ConnEstabAtt": {
+            "type": "long"
+          },
+          "S1ConnEstabSucc": {
+            "type": "long"
+          },
+          "TotPrbDLCnt": {
+            "type": "long"
+          },
+          "TotPrbDLTot": {
+            "type": "float"
+          },
+          "TotPrbULCnt": {
+            "type": "long"
+          },
+          "TotPrbULTot": {
+            "type": "float"
+          },
+          "ULTransmissionNackedRetrans": {
+            "type": "long"
+          },
+          "ULTransmissionRetrans0": {
+            "type": "long"
+          },
+          "VoLTE_Drop_Att": {
+            "type": "long"
+          },
+          "VoLTE_Drop_Tot": {
+            "type": "long"
+          },
+          "VoLTE_Handover_Att": {
+            "type": "long"
+          },
+          "VoLTE_Handover_Succ": {
+            "type": "long"
+          },
+          "[001] RRC_connection_Setup_Success_Rate": {
+            "type": "float"
+          },
+          "[002] ERAB_Setup_success_Rate_GBR": {
+            "type": "long"
+          },
+          "[003] ERAB_Setup_success_Rate_NoneGBR": {
+            "type": "float"
+          },
+          "[004] ERAB_Setup_success_Rate_QCI1": {
+            "type": "long"
+          },
+          "[005] ERAB_Setup_success_Rate_QCI2": {
+            "type": "long"
+          },
+          "[006] ERAB_Setup_success_Rate_QCI5": {
+            "type": "float"
+          },
+          "[007] S1_Signalling_Success_Rate": {
+            "type": "long"
+          },
+          "[008] RRC_Drop_Rate": {
+            "type": "float"
+          },
+          "[009] E-RAB_Drop_Rate_for_GBR": {
+            "type": "float"
+          },
+          "[010] E-RAB_Drop_Rate_NoneGBR": {
+            "type": "float"
+          },
+          "[011] E-RAB_Drop_Rate_QCI1": {
+            "type": "float"
+          },
+          "[012] E-RAB_Drop_Rate_QCI2": {
+            "type": "long"
+          },
+          "[013] E-RAB_Drop_Rate_QCI5": {
+            "type": "float"
+          },
+          "[014] Handover_Success_Rate": {
+            "type": "float"
+          },
+          "[015] Block_Error_Rate_DL_Post_HARQ": {
+            "type": "float"
+          },
+          "[016] Block_Error_Rate_UL_Post_HARQ": {
+            "type": "float"
+          },
+          "[017] Packet_Discard_Rate_QCI1-9": {
+            "type": "long"
+          },
+          "[018] Packet_Delay_QCI1": {
+            "type": "float"
+          },
+          "[019] Packet_Delay_QCI2": {
+            "type": "long"
+          },
+          "[020] Packet_Delay_QCI3": {
+            "type": "long"
+          },
+          "[021] Packet_Delay_QCI4": {
+            "type": "long"
+          },
+          "[022] Packet_Delay_QCI5": {
+            "type": "float"
+          },
+          "[023] Packet_Delay_QCI6_8_9": {
+            "type": "float"
+          },
+          "[024] Packet_Delay_QCI7": {
+            "type": "long"
+          },
+          "[025] Average_DL_Cell_Throughput": {
+            "type": "float"
+          },
+          "[026] Average_DL_Per_User_throughput": {
+            "type": "float"
+          },
+          "[027] Average_UL_Cell_Throughput": {
+            "type": "float"
+          },
+          "[028] Average_UL_User_throughput": {
+            "type": "float"
+          },
+          "[029] Cell_Availability": {
+            "type": "long"
+          },
+          "[030] VoLTE_Drop_Rate": {
+            "type": "long"
+          },
+          "[031] VoLTE_Handover_Success_Rate": {
+            "type": "long"
+          },
+          "[032] Connection_Failure_Rate": {
+            "type": "float"
+          }
+        }
+      }
+    }
+}
+es.indices.create(index='python_index',body=settings)
+
+data = json.loads(df.to_json(orient="records", date_format='iso'))
+
+for success, info in helpers.parallel_bulk(es, data, thread_count=1, chunk_size=100, index=INDEX, doc_type=DOC_TYPE, request_timeout=30):
+    if not success: print('Doc failed', info)
+	
+
