@@ -1,0 +1,3 @@
+# index sortting
+GET _cat/indices?v&s=index:desc&h=alias,index
+
